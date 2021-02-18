@@ -1,17 +1,13 @@
 import React, {Component} from 'react';
-import {
-    View,
-    FlatList,
-    StyleSheet,
-    ActivityIndicator,
-} from 'react-native';
+import {View, FlatList, StyleSheet, ActivityIndicator} from 'react-native';
 import Http from 'cryptoTracker/src/libs/http';
 import CoinsItem from './CoinsItem';
 import colors from '../../res/colors';
-
+import CoinsSearch from './coinsSearch';
 class CoinsScreen extends Component {
     state = {
         coins: [],
+        allCoins: [],
         loading: false,
     };
 
@@ -20,8 +16,17 @@ class CoinsScreen extends Component {
         const res = await Http.instance.get(
             'https://api.coinlore.net/api/tickers',
         );
-        this.setState({coins: res.data, loading: false});
+        this.setState({coins: res.data,allCoins: res.data,  loading: false});
     };
+
+    handleSearch= (query) => {
+        const {allCoins} = this.state;
+        const coinsFilters = allCoins.filter((coin) => {
+            return coin.name.toLowerCase().includes(query.toLowerCase()) ||
+                coin.symbol.toLowerCase().includes(query.toLowerCase())
+        });
+        this.setState({coins: coinsFilters})
+    }
 
     handlePress = (coin) => {
         this.props.navigation.navigate('Detail', {coin});
@@ -31,6 +36,7 @@ class CoinsScreen extends Component {
         const {coins, loading} = this.state;
         return (
             <View style={style.container}>
+                <CoinsSearch onChange={this.handleSearch}/>
                 {loading ? (
                     <ActivityIndicator
                         style={style.loader}
@@ -40,7 +46,14 @@ class CoinsScreen extends Component {
                 ) : null}
                 <FlatList
                     data={coins}
-                    renderItem={({item}) => <CoinsItem item={item} onPress={() => {this.handlePress(item);}} />}
+                    renderItem={({item}) => (
+                        <CoinsItem
+                            item={item}
+                            onPress={() => {
+                                this.handlePress(item);
+                            }}
+                        />
+                    )}
                 />
             </View>
         );
