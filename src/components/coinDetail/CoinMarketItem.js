@@ -24,7 +24,6 @@ const styles = StyleSheet.create({
     },
     priceText: {
         color: colors.white,
-    }
-
+    },
 });
 export default CointMarketItem;

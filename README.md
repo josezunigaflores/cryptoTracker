@@ -19,3 +19,4 @@ Comandos iniciales para installar lo necesario para  el desarrollo
 |react-native-screens  | |
 |react-native-safe-area-context||
 |@react-native-community/masked-view||
+| @react-navigation/bottom-tabs||
