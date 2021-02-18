@@ -6,15 +6,66 @@ import {
     StyleSheet,
     SectionList,
     FlatList,
+    Pressable,
+    Alert
 } from 'react-native';
 import colors from '../../res/colors';
 import Http from '../../libs/http';
 import CointMarketItem from './CoinMarketItem';
+import Storage from '../../libs/storage';
 
 class CoinDetailScreen extends Component {
     state = {
         coin: {},
         markets: [],
+        isFavorite: false,
+    };
+
+    toogleFavorite = () => {
+        if (this.state.isFavorite) {
+            this.removeFavorite();
+        } else {
+            this.addFavorite();
+        }
+    };
+
+    addFavorite = async () => {
+        const coin = JSON.stringify(this.state.coin);
+        const key = `coin-${this.state.coin.id}`;
+        const ok = await Storage.instance.store(key, coin);
+        if (ok) {
+            this.setState({isFavorite: true});
+        }
+    };
+
+    removeFavorite = async () => {
+        Alert.alert('Remove favorite', 'Are you sure', [
+            {
+                text: 'Cancel',
+                onPress: () => {},
+                style: 'cancel',
+            },
+            {
+                text: 'Remove',
+                onPress: async () => {
+                    await Storage.instance.remove(`coin-${this.state.coin.id}`);
+                    this.setState({isFavorite: false});
+                },
+                style: 'destructive',
+            },
+        ]);
+    };
+
+    getFavorite = async () => {
+        const key = `coin-${this.state.coin.id}`;
+        try {
+            const favStr = await Storage.instance.get(key);
+            if (favStr != null) {
+                this.setState({isFavorite: true});
+            }
+        } catch (err) {
+            console.log('err', err);
+        }
     };
 
     getSymbol = (name) => {
@@ -34,7 +85,9 @@ class CoinDetailScreen extends Component {
         const {coin} = this.props.route.params;
         this.props.navigation.setOptions({title: coin.symbol});
         this.getMarkets(coin.id);
-        this.setState({coin});
+        this.setState({coin}, () => {
+            this.getFavorite();
+        });
     }
 
     getSection = (coin) => {
@@ -56,15 +109,29 @@ class CoinDetailScreen extends Component {
     };
 
     render() {
-        const {coin, markets} = this.state;
+        const {coin, markets, isFavorite} = this.state;
         return (
             <View style={styles.container}>
                 <View style={styles.subHeader}>
-                    <Image
-                        style={styles.iconImage}
-                        source={{uri: this.getSymbol(coin.name)}}
-                    />
-                    <Text style={styles.titleText}> {coin.name}</Text>
+                    <View style={styles.row}>
+                        <Image
+                            style={styles.iconImage}
+                            source={{uri: this.getSymbol(coin.name)}}
+                        />
+                        <Text style={styles.titleText}> {coin.name}</Text>
+                    </View>
+                    <Pressable
+                        onPress={this.toogleFavorite}
+                        style={[
+                            styles.btnFavorite,
+                            isFavorite
+                                ? styles.btnFavoriteRemove
+                                : styles.btnFavoriteAdd,
+                        ]}>
+                        <Text style={styles.btnFavoriteText}>
+                            {isFavorite ? 'Remove Favorite' : 'Add Favorites'}
+                        </Text>
+                    </Pressable>
                 </View>
                 <SectionList
                     style={styles.sectionDetail}
@@ -100,10 +167,14 @@ const styles = StyleSheet.create({
         backgroundColor: colors.charade,
         flex: 1,
     },
+    row: {
+        flexDirection: 'row',
+    },
     subHeader: {
         backgroundColor: 'rgba(0,0,0,0.1)',
         padding: 16,
         flexDirection: 'row',
+        justifyContent: 'space-between',
     },
     titleText: {
         fontSize: 16,
@@ -144,6 +215,19 @@ const styles = StyleSheet.create({
     list: {
         maxHeight: 120,
         paddingLeft: 16,
+    },
+    btnFavorite: {
+        padding: 8,
+        borderRadius: 8,
+    },
+    btnFavoriteAdd: {
+        backgroundColor: colors.picton,
+    },
+    btnFavoriteRemove: {
+        backgroundColor: colors.carmine,
+    },
+    btnFavoriteText: {
+        color: colors.white,
     },
 });
 export default CoinDetailScreen;
